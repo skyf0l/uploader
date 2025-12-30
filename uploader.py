@@ -35,6 +35,30 @@ def signal_handler(sig, frame):
 
 signal.signal(signal.SIGINT, signal_handler)
 
+def get_payload_options(os_name):
+    """
+    Returns payload options for the given OS.
+    Returns tuple of (display_list, clean_list) where:
+    - display_list: for showing in menus with shell info
+    - clean_list: for internal logic without labels
+    """
+    if os_name.lower() == "linux":
+        payloads = ["Wget", "Curl"]
+        return payloads, payloads  # No labels needed for Linux
+    elif os_name.lower() == "windows":
+        # Define with shell compatibility info
+        display_payloads = [
+            "Iwr (PowerShell)",
+            "Certutil (CMD/PowerShell)",
+            "Wget (PowerShell)",
+            "Bitsadmin (CMD/PowerShell)",
+            "Regsvr32 (CMD/PowerShell)"
+        ]
+        clean_payloads = ["Iwr", "Certutil", "Wget", "Bitsadmin", "Regsvr32"]
+        return display_payloads, clean_payloads
+    else:
+        return [], []
+
 class autocompletion(Completer):
     def get_completions(self, document, complete_event):
         text = document.text_before_cursor
@@ -85,18 +109,17 @@ def OS_menu(os_arg=None, payload_arg=None):
     else:
         selected_os = os_arg
 
-    if selected_os.lower() == "linux":
-        payload_type = ["Wget", "Curl"]
-    elif selected_os.lower() == "windows":
-        payload_type = ["Iwr", "Certutil", "Wget", "Bitsadmin", "Regsvr32"]
-    else:
+    # Use centralized payload configuration
+    display_payloads, clean_payloads = get_payload_options(selected_os)
+    
+    if not display_payloads:
         print("ERROR: Unsupported OS")
         sys.exit(1)
 
     if payload_arg is None:
-        payload_menu = TerminalMenu(payload_type, menu_cursor="=>  ", menu_highlight_style=style, title="Select a payload type:")
+        payload_menu = TerminalMenu(display_payloads, menu_cursor="=>  ", menu_highlight_style=style, title="Select a payload type:")
         payload_menu_entry_index = payload_menu.show()
-        selected_payload = payload_type[payload_menu_entry_index]
+        selected_payload = clean_payloads[payload_menu_entry_index]  # Use clean name
     else:
         selected_payload = payload_arg
 
@@ -206,18 +229,17 @@ def MenuGeneral(os_arg=None, file_arg=None, port_arg=None, payload_arg=None, Out
                 if payload_arg:
                     Payload = payload_arg
                 else:
-                    if OS.lower() == "linux":
-                        payload_type = ["Wget", "Curl"]
-                    elif OS.lower() == "windows":
-                        payload_type = ["Iwr", "Certutil", "Wget", "Bitsadmin", "Regsvr32"]
-                    else:
+                    # Use centralized payload configuration
+                    display_payloads, clean_payloads = get_payload_options(OS)
+                    
+                    if not display_payloads:
                         continue
 
-                    payload_menu = TerminalMenu(payload_type, menu_cursor="=>  ", menu_highlight_style=style, title="Select a payload type:")
+                    payload_menu = TerminalMenu(display_payloads, menu_cursor="=>  ", menu_highlight_style=style, title="Select a payload type:")
                     payload_index = payload_menu.show()
                     if payload_index is None:
                         continue
-                    Payload = payload_type[payload_index]
+                    Payload = clean_payloads[payload_index]  # Use clean name
 
                 step = 1
 
