@@ -38,9 +38,14 @@ signal.signal(signal.SIGINT, signal_handler)
 def get_payload_options(os_name):
     """
     Returns payload options for the given OS.
-    Returns tuple of (display_list, clean_list) where:
-    - display_list:  for showing in menus with shell info
-    - clean_list: for internal logic without labels
+    
+    Args:
+        os_name (str): The operating system name (e.g., "Linux", "Windows")
+    
+    Returns:
+        tuple: A tuple of (display_list, clean_list) where:
+            - display_list: for showing in menus with shell info
+            - clean_list: for internal logic without labels
     """
     if os_name.lower() == "linux":
         payloads = ["Wget", "Curl"]
