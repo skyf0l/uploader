@@ -148,16 +148,44 @@ def generate_download_command(OS, IPHOST, selected_file, selected_port, Payload,
 
 def start_http_server(selected_file, IPHOST, selected_port, download_command, Output):
     class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
-        def do_GET(self):
+        def log_message(self, format, *args):
+            """Override to add basic logging for method/path/status"""
+            print(f"[{self.command}] {self.path} - {args[1]}")
+        
+        def send_file_headers(self):
+            """Send headers for the selected file"""
+            file_size = os.path.getsize(selected_file)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/octet-stream')
+            self.send_header('Content-Length', str(file_size))
+            self.end_headers()
+        
+        def do_HEAD(self):
+            """Handle HEAD requests (required for BITS/bitsadmin)"""
             if self.path == '/' + os.path.basename(selected_file):
                 try:
-                    self.send_response(200)
-                    self.send_header('Content-type', 'application/octet-stream')
-                    self.end_headers()
+                    self.send_file_headers()
+                except IOError:
+                    self.send_error(404, "File Not Found: %s" % self.path)
+            else:
+                self.send_error(404, "File Not Found: %s" % self.path)
+        
+        def do_GET(self):
+            """Handle GET requests - stream file efficiently"""
+            if self.path == '/' + os.path.basename(selected_file):
+                try:
+                    self.send_file_headers()
+                    # Stream file in chunks to avoid loading entire file into memory
                     with open(selected_file, 'rb') as file:
-                        self.wfile.write(file.read())
+                        chunk_size = 64 * 1024  # 64KB chunks
+                        while True:
+                            chunk = file.read(chunk_size)
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
                     print("File sent successfully.")
-                    threading.Thread(target=self.server.shutdown).start()
+                    # Do not auto-shutdown to allow BITS retries/validation
+                    # threading.Thread(target=self.server.shutdown).start()
                 except IOError as e:
                     self.send_error(404, "File Not Found: %s" % self.path)
             else:
@@ -170,6 +198,14 @@ def start_http_server(selected_file, IPHOST, selected_port, download_command, Ou
     with socketserver.TCPServer((IPHOST, selected_port), CustomHTTPRequestHandler) as httpd:
         print(f"Server started at {IPHOST}:{selected_port}")
         httpd.selected_file = selected_file
+        
+        # Manual test instructions:
+        # 1. Test HEAD request: curl -I http://<ip>:<port>/<filename>
+        #    Expected: 200 OK with Content-Type: application/octet-stream and Content-Length
+        # 2. Test GET request: curl http://<ip>:<port>/<filename> -o output_file
+        #    Expected: File downloads successfully
+        # 3. Test BITS (Windows): bitsadmin /transfer myDownloadJob /download /priority normal http://<ip>:<port>/<filename> C:\path\to\output
+        #    Expected: Download completes successfully
 
         httpd.serve_forever()
 
