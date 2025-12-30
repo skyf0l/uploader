@@ -181,8 +181,8 @@ def start_http_server(selected_file, IPHOST, selected_port, download_command, Ou
                         while chunk := file.read(chunk_size):
                             self.wfile.write(chunk)
                     print("File sent successfully.")
-                    # Do not auto-shutdown to allow BITS retries/validation
-                    # threading.Thread(target=self.server.shutdown).start()
+                    # Note: Server does not auto-shutdown after transfer to support BITS client
+                    # retries, validation, and multiple downloads. User must stop server manually.
                 except IOError as e:
                     self.send_error(404, f"File Not Found: {self.path}")
             else:
