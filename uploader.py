@@ -166,9 +166,9 @@ def start_http_server(selected_file, IPHOST, selected_port, download_command, Ou
                 try:
                     self.send_file_headers()
                 except IOError:
-                    self.send_error(404, "File Not Found: %s" % self.path)
+                    self.send_error(404, f"File Not Found: {self.path}")
             else:
-                self.send_error(404, "File Not Found: %s" % self.path)
+                self.send_error(404, f"File Not Found: {self.path}")
         
         def do_GET(self):
             """Handle GET requests - stream file efficiently"""
@@ -178,18 +178,15 @@ def start_http_server(selected_file, IPHOST, selected_port, download_command, Ou
                     # Stream file in chunks to avoid loading entire file into memory
                     with open(selected_file, 'rb') as file:
                         chunk_size = 64 * 1024  # 64KB chunks
-                        while True:
-                            chunk = file.read(chunk_size)
-                            if not chunk:
-                                break
+                        while chunk := file.read(chunk_size):
                             self.wfile.write(chunk)
                     print("File sent successfully.")
                     # Do not auto-shutdown to allow BITS retries/validation
                     # threading.Thread(target=self.server.shutdown).start()
                 except IOError as e:
-                    self.send_error(404, "File Not Found: %s" % self.path)
+                    self.send_error(404, f"File Not Found: {self.path}")
             else:
-                self.send_error(404, "File Not Found: %s" % self.path)
+                self.send_error(404, f"File Not Found: {self.path}")
 
     command_to_clip = download_command
     os.system(f"echo -n '{command_to_clip}' | xclip -selection clipboard")
