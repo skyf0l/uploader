@@ -195,14 +195,6 @@ def start_http_server(selected_file, IPHOST, selected_port, download_command, Ou
     with socketserver.TCPServer((IPHOST, selected_port), CustomHTTPRequestHandler) as httpd:
         print(f"Server started at {IPHOST}:{selected_port}")
         httpd.selected_file = selected_file
-        
-        # Manual test instructions:
-        # 1. Test HEAD request: curl -I http://<ip>:<port>/<filename>
-        #    Expected: 200 OK with Content-Type: application/octet-stream and Content-Length
-        # 2. Test GET request: curl http://<ip>:<port>/<filename> -o output_file
-        #    Expected: File downloads successfully
-        # 3. Test BITS (Windows): bitsadmin /transfer myDownloadJob /download /priority normal http://<ip>:<port>/<filename> C:\path\to\output
-        #    Expected: Download completes successfully
 
         httpd.serve_forever()
 
