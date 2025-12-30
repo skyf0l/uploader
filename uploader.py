@@ -344,8 +344,9 @@ def MenuGeneral(os_arg=None, file_arg=None, port_arg=None, payload_arg=None, Out
                 if requires_output(OS, Payload):
                     if Output_arg is None:
                         try:
+                            default_filename = os.path.basename(selected_file)
                             with patch_stdout():
-                                Output = session.prompt("Enter the filename to write on the target machine: ", key_bindings=key_bindings)
+                                Output = session.prompt(f"Enter the filename to write on the target machine [{default_filename}]: ", key_bindings=key_bindings, default=default_filename)
                                 if Output == "__stepback__":
                                     step = 3
                                     raise StepBack()
